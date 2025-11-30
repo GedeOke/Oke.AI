@@ -35,7 +35,6 @@ def update_profile(user_id: str, payload: UpdateUserProfileRequest, client: Clie
             client.table("users_profile")
             .update(updates)
             .eq("id", user_id)
-            .maybe_single()
             .execute()
         )
     except Exception as exc:  # pragma: no cover - external service
@@ -60,7 +59,6 @@ def update_avatar(user_id: str, payload: UpdateAvatarRequest, client: Client) ->
             client.table("users_profile")
             .update({"avatar_url": payload.avatar_url})
             .eq("id", user_id)
-            .maybe_single()
             .execute()
         )
     except Exception as exc:  # pragma: no cover - external service
