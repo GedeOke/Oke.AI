@@ -110,15 +110,6 @@ def list_members(organization_id: str, client: Client) -> OrganizationMembersRes
     return OrganizationMembersResponse(organization=_map_org(org_data), members=members)
 
 
-def _ensure_inviter_role(inviter: Dict) -> None:
-    role = (inviter.get("role") or "").lower()
-    if role not in {"owner", "admin"}:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only owner or admin can invite members.",
-        )
-
-
 def _validate_role(role: str) -> str:
     normalized = role.lower()
     if normalized not in ROLE_OPTIONS:
@@ -148,7 +139,6 @@ def _error(code: str, message: str, status_code: int) -> HTTPException:
 
 
 def invite_member_by_email(payload: InviteRequest, inviter: Dict, client: Client) -> InviteResponse:
-    _ensure_inviter_role(inviter)
     role = _validate_role(payload.role)
 
     organization = get_user_organization(inviter["id"], client)
@@ -156,6 +146,23 @@ def invite_member_by_email(payload: InviteRequest, inviter: Dict, client: Client
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Organization not found.",
+        )
+
+    membership_check = (
+        client.table("organization_members")
+        .select("role")
+        .eq("organization_id", organization.id)
+        .eq("user_id", inviter["id"])
+        .limit(1)
+        .execute()
+    )
+    membership_data = getattr(membership_check, "data", None) or []
+    inviter_role = (membership_data[0]["role"].lower() if membership_data else "").strip()
+    if inviter_role not in {"owner", "admin"}:
+        raise _error(
+            "ERR_INVITE_FORBIDDEN",
+            "Only owner or admin can invite members.",
+            status.HTTP_403_FORBIDDEN,
         )
 
     email = payload.email.lower().strip()
