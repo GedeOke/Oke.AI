@@ -3,7 +3,7 @@ Schemas for user profile operations.
 """
 from typing import Optional
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr
 
 
 class UserProfileBase(BaseModel):
@@ -17,8 +17,7 @@ class UserProfileResponse(UserProfileBase):
     id: str
     email: Optional[EmailStr] = None
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UpdateUserProfileRequest(BaseModel):

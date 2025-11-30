@@ -3,7 +3,7 @@ Schemas for organization operations.
 """
 from typing import List, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class OrganizationResponse(BaseModel):
@@ -12,8 +12,7 @@ class OrganizationResponse(BaseModel):
     owner_id: str
     created_at: Optional[str] = None
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class OrganizationMemberResponse(BaseModel):
