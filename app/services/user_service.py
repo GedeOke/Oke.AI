@@ -23,6 +23,17 @@ def get_profile(user_id: str, client: Client) -> Optional[Dict]:
     return getattr(result, "data", None)
 
 
+def _normalize_single_record(data: Optional[Dict | list]) -> Optional[Dict]:
+    """
+    Supabase responses may return a list; normalize to a single dict.
+    """
+    if data is None:
+        return None
+    if isinstance(data, list):
+        return data[0] if data else None
+    return data
+
+
 def update_profile(user_id: str, payload: UpdateUserProfileRequest, client: Client) -> UserProfileResponse:
     updates = {k: v for k, v in payload.dict().items() if v is not None}
     if not updates:
@@ -44,7 +55,7 @@ def update_profile(user_id: str, payload: UpdateUserProfileRequest, client: Clie
             detail="Failed to update profile.",
         ) from exc
 
-    data = getattr(response, "data", None)
+    data = _normalize_single_record(getattr(response, "data", None))
     if not data:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -68,7 +79,7 @@ def update_avatar(user_id: str, payload: UpdateAvatarRequest, client: Client) ->
             detail="Failed to update avatar.",
         ) from exc
 
-    data = getattr(response, "data", None)
+    data = _normalize_single_record(getattr(response, "data", None))
     if not data:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
