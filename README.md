@@ -1,48 +1,50 @@
-# OkeAI - Project Setup
+# FITUR 1 — Auth + Organization
 
-Setup awal untuk platform OkeAI sebagai fondasi backend FastAPI dengan dukungan multi-LLM dan embedding modular.
+Implementasi fitur otentikasi dan manajemen organisasi untuk OkeAI (backend FastAPI + Supabase).
 
-## Tujuan
-- Menyediakan kerangka produksi awal (struktur folder, konfigurasi, middleware dasar).
-- Menyiapkan entrypoint FastAPI, handler error global, dan placeholder rate limit.
-- Menyusun arsitektur modular untuk LLM provider dan embedding provider.
-- Menghubungkan konfigurasi ke environment agar aman dari hard-coded secrets.
+## Ringkasan Fitur
+- Registrasi dan login via Supabase Auth dengan JWT.
+- Pembuatan profil pengguna (`users_profile`) dan organisasi default saat registrasi.
+- Manajemen organisasi: mengambil organisasi aktif, melihat anggota, mengundang, dan menerima undangan.
+- Endpoint profil: update profil dan avatar.
 
-## Struktur Folder
-```
-OkeAI/
-  app/
-    ai/                      # LLM engines & embedding engines
-      embedding/             # Embedding providers
-    core/                    # Config & security helpers
-    middlewares/             # Global error handler, rate limiting stub, logging
-    utils/                   # Helper utilities (logging, rate limiting)
-    db/                      # Supabase client
-    routers/                 # API routers registry
-    services/                # Business logic layer (placeholder)
-    schemas/                 # Pydantic schemas (placeholder)
-    models/                  # ORM/data models (placeholder)
-  docs/                      # Dokumentasi tambahan (placeholder)
-  tests/                     # Test suite (placeholder)
-  main.py                    # FastAPI entrypoint
-  requirements.txt           # Dependencies
-  .env.example               # Contoh environment variables
-  .gitignore                 # Ignore rules
-  LICENSE
-  README.md
-```
+## Alur Register & Login
+1. **Register** (`POST /auth/register`)
+   - Daftarkan pengguna di Supabase Auth.
+   - Buat `users_profile` dengan role `owner`.
+   - Buat organisasi default dan membership `organization_members` sebagai `owner`.
+   - Kembalikan `access_token`, `profile`, dan `organization`.
+2. **Login** (`POST /auth/login`)
+   - Autentikasi via Supabase.
+   - Kembalikan `access_token` dan `profile`.
+3. **Logout** (`POST /auth/logout`)
+   - Revoke sesi aktif.
+4. **Me** (`GET /auth/me`)
+   - Mengambil profil pengguna berdasarkan JWT.
 
-## Environment
-- Semua secrets hanya dibaca via `os.getenv`/`BaseSettings`.
-- Salin `.env.example` menjadi `.env` lalu isi nilai yang sesuai.
-- Pastikan `.env` tidak di-commit (sudah di-ignore).
+## Alur Create Organization Otomatis
+- Registrasi akan otomatis membuat organisasi default bernama `<full_name>'s Organization`.
+- Membership pemilik disimpan di `organization_members` dengan role `owner`.
 
-## Multi-LLM & Embedding
-- LLM providers: OpenAI, Groq, Gemini (pilih via `LLM_PROVIDER`).
-- Embedding providers: OpenAI, Hugging Face Inference, Voyage, Local SentenceTransformer (pilih via `EMBED_MODEL_PROVIDER`).
-- Factory pattern digunakan untuk memuat provider sesuai ENV agar mudah diperluas.
+## Alur Invite Member
+1. **Invite** (`POST /organization/invite`)
+   - Pemilik/admin mengundang pengguna lain dengan mencatat record di `organization_members` (role default `agent`).
+2. **Accept** (`POST /organization/accept`)
+   - Pengguna menerima undangan dan menjadi anggota organisasi.
 
-## Apa yang Belum Dibuat
-- Router/endpoint bisnis, schemas, services, dan models masih placeholder.
-- Rate limiting masih stub (perlu diganti solusi terdistribusi/Redis).
-- Integrasi RAG, storage, dan orchestrasi agent belum diimplementasi.
+## Role User
+- `owner`: Pemilik organisasi, memiliki izin penuh.
+- `admin`: Dapat mengelola anggota dan konfigurasi.
+- `agent`: Role operasional, akses terbatas sesuai kebijakan.
+
+## Endpoint Ringkas
+- Auth: `POST /auth/register`, `POST /auth/login`, `POST /auth/logout`, `GET /auth/me`
+- Users: `PUT /users/me`, `POST /users/me/avatar`
+- Organization: `GET /organization`, `GET /organization/members`, `POST /organization/invite`, `POST /organization/accept`
+
+## Catatan Tabel Supabase
+- `users_profile(id, full_name, phone, avatar_url, role, created_at, updated_at)`
+- `organizations(id, name, owner_id, created_at)`
+- `organization_members(id, organization_id, user_id, role, invited_by, created_at)`
+
+Pastikan kredensial Supabase tersedia di `.env`, dan semua secrets dimuat lewat environment (tidak di-hardcode).

@@ -47,7 +47,6 @@ def verify_jwt(token: str, supabase_client: Client) -> Dict[str, Any]:
             detail="User not found for token.",
         )
 
-    # Supabase user object may not be a plain dict, so extract minimal info.
     return {
         "id": getattr(user, "id", None),
         "email": getattr(user, "email", None),
@@ -70,7 +69,22 @@ async def get_current_user(
 
     token = sanitize_input(credentials.credentials)
     try:
-        return verify_jwt(token, client)
+        auth_user = verify_jwt(token, client)
+        profile_response = (
+            client.table("users_profile")
+            .select("*")
+            .eq("id", auth_user["id"])
+            .maybe_single()
+            .execute()
+        )
+        profile_data = getattr(profile_response, "data", None)
+        if not profile_data:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User profile not found.",
+            )
+        profile_data["email"] = auth_user.get("email")
+        return profile_data
     except SupabaseClientError as exc:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,

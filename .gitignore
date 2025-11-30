@@ -1,12 +1,45 @@
+# Python
 __pycache__/
+*.pyc
+*.pyo
+*.pyd
+env/
+venv/
+.venv/
+
+# Environment & secrets
 .env
 .env.*
-!.env.example
+*.key
+*.secret
+
+# IDE configs
 .vscode/
 .idea/
-*.pyc
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Build
 dist/
 build/
-logs/
-.DS_Store
-.venv/
+*.egg-info/
+
+# Cache
+.pytest_cache/
+coverage/
+cache/
+
+# Byte-compiled / virtualenv
+*.egg
+.eggs/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Node (untuk frontend / widget)
+node_modules/
