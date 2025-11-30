@@ -143,6 +143,10 @@ def _check_expiry(expires_at: Optional[str]) -> None:
         )
 
 
+def _error(code: str, message: str, status_code: int) -> HTTPException:
+    return HTTPException(status_code=status_code, detail={"code": code, "message": message})
+
+
 def invite_member_by_email(payload: InviteRequest, inviter: Dict, client: Client) -> InviteResponse:
     _ensure_inviter_role(inviter)
     role = _validate_role(payload.role)
@@ -196,35 +200,36 @@ def accept_invite(payload: AcceptInviteRequest, current_user: Dict, client: Clie
     invite_resp = (
         client.table("organization_invites")
         .select("*")
-        .eq("id", payload.invite_token)
+        .eq("id", str(payload.invite_token))
         .limit(1)
         .execute()
     )
     invite_data_list = getattr(invite_resp, "data", None) or []
     invite = invite_data_list[0] if invite_data_list else None
     if not invite:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Invite not found.",
-        )
+        raise _error("ERR_INVITE_NOT_FOUND", "Invite not found.", status.HTTP_404_NOT_FOUND)
 
     if invite.get("status") != "pending":
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invite is not pending.",
-        )
+        raise _error("ERR_INVITE_INVALID_STATUS", "Invite is not pending.", status.HTTP_400_BAD_REQUEST)
 
-    _check_expiry(invite.get("expires_at"))
+    try:
+        _check_expiry(invite.get("expires_at"))
+    except HTTPException:
+        raise _error("ERR_INVITE_EXPIRED", "Invite expired.", status.HTTP_400_BAD_REQUEST)
 
     invite_email = (invite.get("email") or "").lower()
     current_email = (current_user.get("email") or "").lower()
     if invite_email != current_email:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Invite email does not match current user.",
+        raise _error(
+            "ERR_INVITE_EMAIL_MISMATCH",
+            "Invite email does not match current user.",
+            status.HTTP_403_FORBIDDEN,
         )
 
-    role = _validate_role(invite.get("role", "agent"))
+    try:
+        role = _validate_role(invite.get("role", "agent"))
+    except HTTPException:
+        raise _error("ERR_INVITE_INVALID_STATUS", "Invalid invite role.", status.HTTP_400_BAD_REQUEST)
 
     org_result = (
         client.table("organizations").select("*").eq("id", invite["organization_id"]).limit(1).execute()
@@ -232,10 +237,7 @@ def accept_invite(payload: AcceptInviteRequest, current_user: Dict, client: Clie
     org_data_list = getattr(org_result, "data", None) or []
     org_data = org_data_list[0] if org_data_list else None
     if not org_data:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Organization not found.",
-        )
+        raise _error("ERR_INVITE_NOT_FOUND", "Organization not found for invite.", status.HTTP_404_NOT_FOUND)
 
     membership_result = (
         client.table("organization_members")
@@ -247,10 +249,7 @@ def accept_invite(payload: AcceptInviteRequest, current_user: Dict, client: Clie
     )
     membership_data = getattr(membership_result, "data", None) or []
     if membership_data:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User already a member.",
-        )
+        raise _error("ERR_ALREADY_MEMBER", "User already a member.", status.HTTP_400_BAD_REQUEST)
 
     member_record = {
         "id": str(uuid4()),
@@ -272,4 +271,7 @@ def accept_invite(payload: AcceptInviteRequest, current_user: Dict, client: Clie
 
     member_data = getattr(insert_resp, "data", None) or [member_record]
     member = _map_member(member_data[0])
-    return AcceptInviteResponse(organization=_map_org(org_data), member=member)
+    return AcceptInviteResponse(
+        organization_id=invite["organization_id"],
+        role=member.role,
+    )
