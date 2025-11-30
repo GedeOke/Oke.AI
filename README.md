@@ -1,50 +1,83 @@
-# FITUR 1 — Auth + Organization
+# Update — Invite by Email
 
-Implementasi fitur otentikasi dan manajemen organisasi untuk OkeAI (backend FastAPI + Supabase).
+Desain undangan organisasi OkeAI diubah agar berbasis email (mirip Slack/Notion). Pemilik atau admin dapat mengirim undangan ke email apa pun; penerima bisa mendaftar dulu lalu menerima undangan ketika sudah login.
 
-## Ringkasan Fitur
-- Registrasi dan login via Supabase Auth dengan JWT.
-- Pembuatan profil pengguna (`users_profile`) dan organisasi default saat registrasi.
-- Manajemen organisasi: mengambil organisasi aktif, melihat anggota, mengundang, dan menerima undangan.
-- Endpoint profil: update profil dan avatar.
+## Mengapa Diubah
+- Menghilangkan ketergantungan pada `user_id` saat mengundang.
+- Memungkinkan mengundang calon pengguna yang belum terdaftar.
+- Mengikat token undangan dengan email untuk keamanan.
 
-## Alur Register & Login
-1. **Register** (`POST /auth/register`)
-   - Daftarkan pengguna di Supabase Auth.
-   - Buat `users_profile` dengan role `owner`.
-   - Buat organisasi default dan membership `organization_members` sebagai `owner`.
-   - Kembalikan `access_token`, `profile`, dan `organization`.
-2. **Login** (`POST /auth/login`)
-   - Autentikasi via Supabase.
-   - Kembalikan `access_token` dan `profile`.
-3. **Logout** (`POST /auth/logout`)
-   - Revoke sesi aktif.
-4. **Me** (`GET /auth/me`)
-   - Mengambil profil pengguna berdasarkan JWT.
+## Skema Tabel Baru
+Tambahkan tabel `organization_invites` di Supabase:
+```sql
+create table if not exists public.organization_invites (
+  id uuid primary key,
+  organization_id uuid not null references public.organizations(id) on delete cascade,
+  email text not null,
+  role text not null check (role in ('owner','admin','agent')),
+  invited_by uuid references auth.users(id),
+  status text not null default 'pending',
+  created_at timestamp with time zone default now(),
+  expires_at timestamp with time zone
+);
+create index if not exists idx_org_invites_org on public.organization_invites (organization_id);
+create index if not exists idx_org_invites_email on public.organization_invites (email);
+```
 
-## Alur Create Organization Otomatis
-- Registrasi akan otomatis membuat organisasi default bernama `<full_name>'s Organization`.
-- Membership pemilik disimpan di `organization_members` dengan role `owner`.
+## Alur Invite → Accept
+1) **Invite (owner/admin)**  
+   - Endpoint: `POST /organization/invite`  
+   - Body: `{"email": "user2@gmail.com", "role": "admin"}`  
+   - Aksi: cek role inviter (owner/admin), validasi role target, buat token UUID di `organization_invites` (status pending), kembalikan `invite_token`.
 
-## Alur Invite Member
-1. **Invite** (`POST /organization/invite`)
-   - Pemilik/admin mengundang pengguna lain dengan mencatat record di `organization_members` (role default `agent`).
-2. **Accept** (`POST /organization/accept`)
-   - Pengguna menerima undangan dan menjadi anggota organisasi.
+2) **Accept (penerima login dengan email yang sama)**  
+   - Endpoint: `POST /organization/accept`  
+   - Body: `{"invite_token": "<uuid>"}`  
+   - Aksi: cek token pending dan belum kadaluarsa, cocokan email token dengan email user saat ini, cek membership belum ada, tambahkan ke `organization_members`, update status undangan menjadi `accepted`.
 
-## Role User
-- `owner`: Pemilik organisasi, memiliki izin penuh.
-- `admin`: Dapat mengelola anggota dan konfigurasi.
-- `agent`: Role operasional, akses terbatas sesuai kebijakan.
+## Contoh Request/Response
+**Invite**
+```
+POST /organization/invite
+Authorization: Bearer <token_owner>
+{
+  "email": "user2@gmail.com",
+  "role": "admin"
+}
+```
+Respons
+```
+{
+  "invite_token": "09f9e0da-7a5d-4c1b-8a38-9d8f5b4e52c2",
+  "status": "pending"
+}
+```
 
-## Endpoint Ringkas
-- Auth: `POST /auth/register`, `POST /auth/login`, `POST /auth/logout`, `GET /auth/me`
-- Users: `PUT /users/me`, `POST /users/me/avatar`
-- Organization: `GET /organization`, `GET /organization/members`, `POST /organization/invite`, `POST /organization/accept`
+**Accept**
+```
+POST /organization/accept
+Authorization: Bearer <token_user2>
+{
+  "invite_token": "09f9e0da-7a5d-4c1b-8a38-9d8f5b4e52c2"
+}
+```
+Respons (ringkas)
+```
+{
+  "organization": { "id": "...", "name": "...", "owner_id": "..." },
+  "member": { "organization_id": "...", "user_id": "...", "role": "admin", ... }
+}
+```
 
-## Catatan Tabel Supabase
-- `users_profile(id, full_name, phone, avatar_url, role, created_at, updated_at)`
-- `organizations(id, name, owner_id, created_at)`
-- `organization_members(id, organization_id, user_id, role, invited_by, created_at)`
+## Keamanan & Validasi
+- Hanya owner/admin yang bisa mengundang.
+- Role terbatas ke `owner`, `admin`, `agent`.
+- Token terikat email; email user saat accept harus sama dengan email pada undangan.
+- Tidak boleh ada membership duplikat untuk org yang sama.
+- Undangan bisa memakai `expires_at`; jika lewat, akan ditolak.
 
-Pastikan kredensial Supabase tersedia di `.env`, dan semua secrets dimuat lewat environment (tidak di-hardcode).
+## Endpoint Aktif (terkait undangan)
+- `POST /organization/invite`
+- `POST /organization/accept`
+- `GET /organization`
+- `GET /organization/members`

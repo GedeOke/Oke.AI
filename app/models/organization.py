@@ -21,3 +21,15 @@ class OrganizationMember:
     role: str
     invited_by: Optional[str] = None
     created_at: Optional[str] = None
+
+
+@dataclass
+class OrganizationInvite:
+    id: str
+    organization_id: str
+    email: str
+    role: str
+    invited_by: Optional[str] = None
+    status: str = "pending"
+    created_at: Optional[str] = None
+    expires_at: Optional[str] = None

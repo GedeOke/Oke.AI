@@ -3,7 +3,7 @@ Schemas for organization operations.
 """
 from typing import List, Optional
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class OrganizationResponse(BaseModel):
@@ -25,6 +25,16 @@ class OrganizationMemberResponse(BaseModel):
     profile: Optional[dict] = None
 
 
+class InviteRequest(BaseModel):
+    email: EmailStr
+    role: str = Field(default="agent")
+
+
+class InviteResponse(BaseModel):
+    invite_token: str
+    status: str
+
+
 class InviteMemberRequest(BaseModel):
     organization_id: str
     user_id: str
@@ -32,7 +42,12 @@ class InviteMemberRequest(BaseModel):
 
 
 class AcceptInviteRequest(BaseModel):
-    organization_id: str
+    invite_token: str
+
+
+class AcceptInviteResponse(BaseModel):
+    organization: OrganizationResponse
+    member: OrganizationMemberResponse
 
 
 class OrganizationMembersResponse(BaseModel):

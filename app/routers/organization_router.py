@@ -7,7 +7,9 @@ from app.core.security import get_current_user
 from app.db.supabase import get_supabase_client
 from app.schemas.organization_schema import (
     AcceptInviteRequest,
-    InviteMemberRequest,
+    AcceptInviteResponse,
+    InviteRequest,
+    InviteResponse,
     OrganizationMembersResponse,
     OrganizationResponse,
     OrganizationMemberResponse,
@@ -41,19 +43,19 @@ def get_members(
     return organization_service.list_members(org.id, client)
 
 
-@router.post("/invite", response_model=OrganizationMemberResponse)
+@router.post("/invite", response_model=InviteResponse)
 def invite_member(
-    payload: InviteMemberRequest,
+    payload: InviteRequest,
     client=Depends(get_supabase_client),
     current_user=Depends(get_current_user),
 ):
-    return organization_service.invite_member(payload, current_user["id"], client)
+    return organization_service.invite_member_by_email(payload, current_user, client)
 
 
-@router.post("/accept", response_model=OrganizationMemberResponse)
+@router.post("/accept", response_model=AcceptInviteResponse)
 def accept_invite(
     payload: AcceptInviteRequest,
     client=Depends(get_supabase_client),
     current_user=Depends(get_current_user),
 ):
-    return organization_service.accept_invite(payload, current_user["id"], client)
+    return organization_service.accept_invite(payload, current_user, client)
