@@ -3,7 +3,7 @@ Pydantic schemas for authentication workflows.
 """
 from typing import Optional
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, UUID4
 
 from app.schemas.user_schema import UserProfileResponse
 from app.schemas.organization_schema import OrganizationResponse
@@ -14,6 +14,7 @@ class RegisterRequest(BaseModel):
     password: str = Field(min_length=6)
     full_name: str
     phone: Optional[str] = None
+    invite_token: Optional[UUID4] = None
 
 
 class LoginRequest(BaseModel):

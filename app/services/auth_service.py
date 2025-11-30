@@ -12,6 +12,8 @@ from supabase import Client
 from app.schemas.auth_schema import LoginRequest, RegisterRequest
 from app.schemas.user_schema import UserProfileResponse
 from app.schemas.organization_schema import OrganizationResponse
+from app.schemas.organization_schema import AcceptInviteRequest
+from app.services import organization_service
 from app.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -23,7 +25,6 @@ def _map_profile(data: Dict, email: Optional[str] = None) -> UserProfileResponse
         full_name=data.get("full_name"),
         phone=data.get("phone"),
         avatar_url=data.get("avatar_url"),
-        role=data.get("role"),
         email=email,
     )
 
@@ -39,7 +40,9 @@ def _map_org(data: Dict) -> OrganizationResponse:
 
 def register_user(payload: RegisterRequest, client: Client) -> Dict:
     """
-    Register user via Supabase Auth and bootstrap organization.
+    Register user via Supabase Auth.
+    - Without invite_token: create profile, new org, owner membership.
+    - With invite_token: create profile, auto-accept invite (no new org).
     """
     try:
         auth_response = client.auth.sign_up(
@@ -82,34 +85,54 @@ def register_user(payload: RegisterRequest, client: Client) -> Dict:
         "full_name": payload.full_name,
         "phone": payload.phone,
         "avatar_url": None,
-        "role": "owner",
     }
     profile_result = client.table("users_profile").insert(profile_payload).execute()
     profile_data = (getattr(profile_result, "data", None) or [profile_payload])[0]
 
-    org_id = str(uuid4())
-    organization_payload = {
-        "id": org_id,
-        "name": f"{payload.full_name}'s Organization",
-        "owner_id": user_id,
-    }
-    org_result = client.table("organizations").insert(organization_payload).execute()
-    org_data = (getattr(org_result, "data", None) or [organization_payload])[0]
+    organization = None
 
-    member_payload = {
-        "id": str(uuid4()),
-        "organization_id": org_id,
-        "user_id": user_id,
-        "role": "owner",
-        "invited_by": user_id,
-    }
-    client.table("organization_members").insert(member_payload).execute()
+    if payload.invite_token:
+        invite_req = AcceptInviteRequest(invite_token=payload.invite_token)
+        accept_resp = organization_service.accept_invite(
+            invite_req,
+            {"id": user_id, "email": user.email},
+            client,
+        )
+        org_fetch = (
+            client.table("organizations")
+            .select("*")
+            .eq("id", accept_resp.organization_id)
+            .limit(1)
+            .execute()
+        )
+        org_data_list = getattr(org_fetch, "data", None) or []
+        if org_data_list:
+            organization = _map_org(org_data_list[0])
+    else:
+        org_id = str(uuid4())
+        organization_payload = {
+            "id": org_id,
+            "name": f"{payload.full_name}'s Organization",
+            "owner_id": user_id,
+        }
+        org_result = client.table("organizations").insert(organization_payload).execute()
+        org_data = (getattr(org_result, "data", None) or [organization_payload])[0]
+
+        member_payload = {
+            "id": str(uuid4()),
+            "organization_id": org_id,
+            "user_id": user_id,
+            "role": "owner",
+            "invited_by": user_id,
+        }
+        client.table("organization_members").insert(member_payload).execute()
+        organization = _map_org(org_data)
 
     return {
         "access_token": session.access_token,
         "token_type": "bearer",
         "profile": _map_profile(profile_data, email=user.email),
-        "organization": _map_org(org_data),
+        "organization": organization,
     }
 
 
@@ -140,16 +163,16 @@ def login_user(payload: LoginRequest, client: Client) -> Dict:
         client.table("users_profile")
         .select("*")
         .eq("id", user.id)
-        .maybe_single()
+        .limit(1)
         .execute()
     )
-    profile_data = getattr(profile_result, "data", None) or {}
-    if not profile_data:
+    profile_data_list = getattr(profile_result, "data", None) or []
+    if not profile_data_list:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User profile not found.",
         )
-    profile = _map_profile(profile_data, email=user.email)
+    profile = _map_profile(profile_data_list[0], email=user.email)
 
     return {
         "access_token": session.access_token,

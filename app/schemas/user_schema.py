@@ -10,7 +10,6 @@ class UserProfileBase(BaseModel):
     full_name: Optional[str] = None
     phone: Optional[str] = None
     avatar_url: Optional[str] = None
-    role: Optional[str] = None
 
 
 class UserProfileResponse(UserProfileBase):
