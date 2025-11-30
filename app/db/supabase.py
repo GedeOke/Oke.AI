@@ -26,7 +26,8 @@ def get_supabase_client() -> Client:
         raise SupabaseClientError("Supabase credentials are not configured.")
 
     try:
-        client: Client = create_client(str(settings.supabase_url), settings.supabase_key)
+        supabase_url = str(settings.supabase_url).rstrip("/")
+        client: Client = create_client(supabase_url, settings.supabase_key)
         return client
     except Exception as exc:  # pragma: no cover - external client creation
         logger.exception("Failed to initialize Supabase client")

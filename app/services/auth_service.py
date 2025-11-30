@@ -49,7 +49,7 @@ def register_user(payload: RegisterRequest, client: Client) -> Dict:
         logger.exception("Supabase sign_up failed")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Registration failed.",
+            detail=str(exc),
         ) from exc
 
     user = getattr(auth_response, "user", None)
@@ -109,7 +109,7 @@ def login_user(payload: LoginRequest, client: Client) -> Dict:
         logger.exception("Supabase sign_in failed")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid credentials.",
+            detail=str(exc),
         ) from exc
 
     user = getattr(auth_response, "user", None)
