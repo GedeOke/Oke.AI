@@ -54,10 +54,26 @@ def register_user(payload: RegisterRequest, client: Client) -> Dict:
 
     user = getattr(auth_response, "user", None)
     session = getattr(auth_response, "session", None)
-    if not user or not session or not session.access_token:
+
+    if not session or not getattr(session, "access_token", None):
+        # If email confirmation is required, Supabase returns no session.
+        try:
+            signin_response = client.auth.sign_in_with_password(
+                {"email": payload.email, "password": payload.password}
+            )
+            session = getattr(signin_response, "session", None)
+            user = user or getattr(signin_response, "user", None)
+        except Exception as exc:  # pragma: no cover - external service
+            logger.warning("Sign in after sign up failed", exc_info=exc)
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email confirmation required. Please verify your email then login.",
+            ) from exc
+
+    if not user or not session or not getattr(session, "access_token", None):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Registration did not return access token.",
+            detail="Email confirmation required. Please verify your email then login.",
         )
 
     user_id = user.id
