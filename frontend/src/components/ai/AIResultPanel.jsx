@@ -1,36 +1,45 @@
 import Card from "../ui/Card";
+import AIInsightBar from "./AIInsightBar.jsx";
 
 export default function AIResultPanel({ result }) {
   if (!result) return <Card>Belum ada hasil.</Card>;
 
+  const ragText =
+    (result.chunks || result.rag_chunks || [])
+      .map((c) => (typeof c === "string" ? c : c.content))
+      .join("\n\n") || "Tidak ada RAG yang relevan.";
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      <Card>
-        <h3 className="text-sm font-semibold mb-2">Reply</h3>
-        <p className="text-gray-800 whitespace-pre-wrap">{result.reply || "-"}</p>
+    <div className="space-y-4">
+      <Card className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-slate-800">AI Reply</h3>
+          <AIInsightBar intent={result.classification?.intent} sentiment={result.sentiment} safety={result.safety} />
+        </div>
+        <p className="text-slate-800 whitespace-pre-wrap leading-relaxed">{result.reply || "-"}</p>
       </Card>
-      <Card>
-        <h3 className="text-sm font-semibold mb-2">Intent</h3>
-        <p className="text-gray-800">{result.classification?.intent || "-"}</p>
-        <h3 className="text-sm font-semibold mt-4 mb-2">Sentiment</h3>
-        <p className="text-gray-800">{result.sentiment || "-"}</p>
-      </Card>
-      <Card>
-        <h3 className="text-sm font-semibold mb-2">RAG Chunks</h3>
-        <pre className="text-xs bg-gray-50 p-3 rounded-lg overflow-auto max-h-64 whitespace-pre-wrap">
-{(result.chunks || result.rag_chunks || []).map((c) => (typeof c === "string" ? c : c.content)).join("\n\n") || "-"}
-        </pre>
-      </Card>
-      <Card>
-        <h3 className="text-sm font-semibold mb-2">Function Planner</h3>
-        <pre className="text-xs bg-gray-50 p-3 rounded-lg overflow-auto max-h-64 whitespace-pre-wrap">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Card>
+          <h3 className="text-sm font-semibold mb-2 text-slate-800">RAG Chunks</h3>
+          <pre className="text-xs bg-slate-50 border border-slate-200 p-3 rounded-xl overflow-auto max-h-64 whitespace-pre-wrap text-slate-700">
+{ragText}
+          </pre>
+        </Card>
+        <Card className="space-y-3">
+          <div>
+            <h3 className="text-sm font-semibold mb-1 text-slate-800">Function Planner</h3>
+            <pre className="text-xs bg-slate-50 border border-slate-200 p-3 rounded-xl overflow-auto max-h-64 whitespace-pre-wrap text-slate-700">
 {JSON.stringify(result.action || {}, null, 2)}
-        </pre>
-        <h3 className="text-sm font-semibold mt-4 mb-2">Safety</h3>
-        <pre className="text-xs bg-gray-50 p-3 rounded-lg overflow-auto whitespace-pre-wrap">
+            </pre>
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold mb-1 text-slate-800">Safety</h3>
+            <pre className="text-xs bg-slate-50 border border-slate-200 p-3 rounded-xl overflow-auto whitespace-pre-wrap text-slate-700">
 {JSON.stringify(result.safety || {}, null, 2)}
-        </pre>
-      </Card>
+            </pre>
+          </div>
+        </Card>
+      </div>
     </div>
   );
 }
