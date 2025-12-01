@@ -18,7 +18,8 @@ from app.ai_engine.tuning.prompt_builder import build
 from app.ai_engine.rewriter.tone_rewriter import rewrite_tone
 from app.ai_engine.utils.exceptions import SpamDetected
 from app.ai_engine.utils.logger import get_logger
-from app.rag import query_optimizer, retriever
+from app.rag.query_optimizer import generate as generate_queries
+from app.rag.retriever import retrieve
 
 logger = get_logger(__name__)
 
@@ -40,9 +41,9 @@ async def run_ai_pipeline(
         settings = load_ai_settings(org_id)
         embed_provider = settings.get("embed_provider", provider)
 
-        queries = query_optimizer.generate(user_message)
+        queries = generate_queries(user_message)
         try:
-            rag_hits = retriever.retrieve(org_id, queries, embed_provider=embed_provider, top_k=6)
+            rag_hits = retrieve(org_id, queries, embed_provider=embed_provider, top_k=6)
         except Exception:
             logger.info("RAG retrieval failed, fallback to empty context", extra={"org_id": org_id})
             rag_hits = []
