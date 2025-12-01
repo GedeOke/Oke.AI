@@ -8,20 +8,26 @@ export default function Topbar() {
   const [value, setValue] = useState(organizationId || "");
 
   return (
-    <header className="w-full bg-white border-b border-gray-200 px-4 py-3 flex items-center gap-3">
-      <div className="flex items-center gap-2 w-full md:w-auto">
-        <span className="text-sm font-medium text-gray-700">Organization ID</span>
-        <div className="flex items-center gap-2">
-          <Input
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
-            placeholder="org-uuid"
-            className="w-56"
-          />
-          <Button variant="secondary" onClick={() => setOrganizationId(value)}>
-            Set
-          </Button>
+    <header className="w-full bg-white/80 backdrop-blur border-b border-slate-200 px-4 py-3 flex items-center justify-between">
+      <div className="flex items-center gap-2">
+        <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold">
+          OA
         </div>
+        <div>
+          <h1 className="text-base font-semibold text-slate-900">OkeAI Dashboard</h1>
+          <p className="text-xs text-slate-500">CRM & AI Engine Playground</p>
+        </div>
+      </div>
+      <div className="flex items-center gap-2">
+        <Input
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          placeholder="org-uuid"
+          className="w-56"
+        />
+        <Button variant="secondary" onClick={() => setOrganizationId(value)}>
+          Set Org
+        </Button>
       </div>
     </header>
   );

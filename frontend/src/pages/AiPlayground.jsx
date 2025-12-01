@@ -24,7 +24,11 @@ export default function AiPlayground() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-semibold">AI Playground</h1>
+      <div>
+        <p className="text-xs font-semibold text-indigo-600 uppercase tracking-wide">AI Engine</p>
+        <h1 className="text-2xl font-semibold text-slate-900">AI Playground</h1>
+        <p className="text-sm text-slate-500">Uji prompt, provider, dan lihat hasil lengkap AI.</p>
+      </div>
       <Card className="space-y-4">
         <AIModelSelector
           provider={provider}
