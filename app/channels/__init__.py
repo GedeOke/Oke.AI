@@ -1,1 +1,1 @@
-
+"""Channel package."""
