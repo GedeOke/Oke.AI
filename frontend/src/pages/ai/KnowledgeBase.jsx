@@ -8,6 +8,7 @@ import { uploadDocument, listDocuments, searchRag } from "../../lib/ragApi";
 export default function KnowledgeBase() {
   const [docs, setDocs] = useState([]);
   const [ragResult, setRagResult] = useState(null);
+  const [embedProvider, setEmbedProvider] = useState("openai");
 
   const refresh = async () => {
     const data = await listDocuments();
@@ -15,7 +16,7 @@ export default function KnowledgeBase() {
   };
 
   const handleTest = async (query) => {
-    const data = await searchRag(query, 6);
+    const data = await searchRag(query, 6, embedProvider);
     setRagResult({ chunks: data?.chunks || data?.rag_chunks || [], answer: data?.answer || "" });
   };
 
@@ -33,7 +34,14 @@ export default function KnowledgeBase() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card>
-          <DocumentUploader onUpload={async (fd) => { await uploadDocument(fd); refresh(); }} />
+          <DocumentUploader
+            embedProvider={embedProvider}
+            setEmbedProvider={setEmbedProvider}
+            onUpload={async (fd, provider) => {
+              await uploadDocument(fd, provider);
+              refresh();
+            }}
+          />
         </Card>
         <Card>
           <RagTestConsole onTest={handleTest} result={ragResult} />
