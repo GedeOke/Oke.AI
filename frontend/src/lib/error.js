@@ -1,8 +1,10 @@
 export const getErrorMessage = (err) => {
   let msg = "";
+  let code = "";
   if (err?.response?.data) {
     if (typeof err.response.data === "string") msg = err.response.data;
     else {
+      code = err.response.data.code || err.response.data.error_code || "";
       msg =
         err.response.data.message ||
         err.response.data.detail ||
@@ -11,6 +13,10 @@ export const getErrorMessage = (err) => {
     }
   } else if (err?.message) {
     msg = err.message;
+  }
+
+  if (code === "invalid_credentials") {
+    return "Email atau password salah.";
   }
 
   if (/status code/i.test(msg)) {
