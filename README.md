@@ -1,36 +1,73 @@
-# Patch: Customers + Conversations + Messages
+# AI Engine – OkeAI (FastAPI + Supabase)
 
-Foundational schema and APIs for multi-tenant inbox/AI messaging.
+Modular AI engine for OkeAI with multi-provider LLMs, prompt tuning, safety, RAG, memory, and orchestration.
 
-## ERD (ringkas)
-- `customers`: {id, organization_id, external_id, name, phone, email, source}
-- `conversations`: {id, organization_id, customer_id, channel, status, assigned_to}
-- `messages`: {id, organization_id, conversation_id, sender_type, sender_id, content, metadata}
+## Arsitektur
+- `providers/`: OpenAI, Groq, Gemini wrappers + selector.
+- `tuning/`: AI settings loader (Supabase `ai_settings`), master prompt builder (BothINST, REIT, RIGHT, MOCK, INFO, NAME, POS).
+- `classifiers/`: Intent & sentiment classification.
+- `spam_filter/`: Rule, ML placeholder, LLM fallback with pipeline.
+- `rag/`: Query optimizer + retriever (Supabase table `rag_chunks` placeholder).
+- `memory/`: Summarizer + memory manager (store to `ai_memory`).
+- `safety/`: Safety checker.
+- `planner/`: Function calling planner.
+- `autopilot/`: Auto-reply decider.
+- `rewriter/`: Tone rewriter.
+- `agent_assist/`: Suggestion generator.
+- `orchestrator/`: Pipeline executor.
+- `utils/`: Logger, exceptions, validation.
 
-## Auto-Create Flows
-- `find_or_create_customer(org_id, external_id, source)`
-- `find_or_create_conversation(org_id, customer_id, channel)`
-- Inbound handling (future webhook): create customer+conversation if not exists, then insert message.
+## Pipeline (simplified)
+1. Spam check (rule → ML → optional LLM).
+2. Intent classification.
+3. Sentiment analysis.
+4. Query optimization + RAG retrieval.
+5. Load AI settings (persona, rules, style, examples, LLM params, tools).
+6. Build prompt (system + history + RAG).
+7. LLM chat (provider selector).
+8. Safety check.
+9. Function planner.
+10. Autopilot decision.
+11. Tone rewrite.
+12. Agent suggestions.
+13. Return reply/action/metadata.
 
-## Endpoints
-- Customers: `GET /customers`, `GET /customers/{id}`, `POST /customers`, `PUT /customers/{id}`, `DELETE /customers/{id}`
-- Conversations: `GET /conversations`, `GET /conversations/{id}`, `PUT /conversations/{id}/close`, `PUT /conversations/{id}/assign`
-- Messages: `GET /messages/conversations/{id}`, `POST /messages/send`
+## Contoh Penggunaan (pseudo)
+```python
+from app.ai_engine.orchestrator.ai_orchestrator import run_ai_pipeline
 
-## Send Message Example
+result = await run_ai_pipeline(
+    org_id="org-uuid",
+    user_message="Halo, saya butuh bantuan",
+    conversation_context=[
+        {"role": "user", "content": "Halo"},
+        {"role": "assistant", "content": "Hai, ada yang bisa dibantu?"}
+    ],
+    provider="openai",
+)
+print(result["reply"])
 ```
-POST /messages/send
-Authorization: Bearer <token>
+
+## Contoh Request/Response (high level)
+- Input: `org_id`, `user_message`, optional `conversation_context`, `provider`
+- Output:
+```json
 {
-  "conversation_id": "<uuid>",
-  "content": "Hello from agent",
-  "metadata": {"source": "webchat"}
+  "reply": "...",
+  "action": null,
+  "classification": {"intent": "..."},
+  "sentiment": "positive|neutral|negative",
+  "rag_used": true,
+  "should_auto_reply": true,
+  "safety": {"safe": true, "reason": ""},
+  "suggestions": ["..."]
 }
 ```
 
-## Multi-Tenancy & Security
-- All queries filtered by `organization_id` from the authenticated user.
-- No cross-org access; RLS-ready on Supabase.
+## Webhook / Integrasi
+- Inbound webhook → gunakan `message_service.ingest_message_auto` untuk membuat customer + conversation + message, lalu panggil `run_ai_pipeline`.
+- RLS: pastikan `organization_id` selalu difilter dari konteks user.
 
-## Webhook Integration (future)
-- Inbound webhook → call `find_or_create_customer` and `find_or_create_conversation`, then append message via service.
+## Tuning AI
+- Atur tabel `ai_settings` per organisasi untuk persona, rules, style, examples, call_word, rag, llm_params, tools schema.
+- Set env keys untuk provider: `OPENAI_API_KEY`, `GROQ_API_KEY`, `GEMINI_API_KEY` (+ optional model overrides).
