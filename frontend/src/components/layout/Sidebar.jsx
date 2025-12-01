@@ -1,23 +1,26 @@
+import { Link, useLocation } from "react-router-dom";
+
 const navItems = [
-  { key: "ai", label: "AI Playground" },
-  { key: "inbox", label: "Inbox" },
+  { to: "/ai", label: "AI Playground" },
+  { to: "/inbox", label: "Inbox" },
 ];
 
-export default function Sidebar({ current, onSelect }) {
+export default function Sidebar() {
+  const location = useLocation();
   return (
     <aside className="w-full md:w-64 bg-white border-r border-gray-200 p-4">
       <h2 className="text-lg font-semibold mb-4">OkeAI Dashboard</h2>
       <nav className="space-y-2">
         {navItems.map((item) => (
-          <button
-            key={item.key}
-            onClick={() => onSelect(item.key)}
+          <Link
+            key={item.to}
+            to={item.to}
             className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium ${
-              current === item.key ? "bg-indigo-600 text-white" : "hover:bg-gray-100"
+              location.pathname === item.to ? "bg-indigo-600 text-white" : "hover:bg-gray-100"
             }`}
           >
             {item.label}
-          </button>
+          </Link>
         ))}
       </nav>
     </aside>

@@ -1,13 +1,19 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import { BrowserRouter } from 'react-router-dom'
 import './styles/globals.css'
 import App from './App.jsx'
 import { OrganizationProvider } from './context/OrganizationContext.jsx'
+import { AuthProvider } from './context/AuthContext.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <OrganizationProvider>
-      <App />
-    </OrganizationProvider>
+    <BrowserRouter>
+      <AuthProvider>
+        <OrganizationProvider>
+          <App />
+        </OrganizationProvider>
+      </AuthProvider>
+    </BrowserRouter>
   </StrictMode>,
 )

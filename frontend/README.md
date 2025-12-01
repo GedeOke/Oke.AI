@@ -43,3 +43,9 @@ Hasil yang ditampilkan: reply, intent, sentiment, RAG chunks, planner, safety, p
 2. Set Organization ID di topbar (UUID org).
 3. Buka AI Playground, isi prompt, klik Run.
 4. Buka Inbox, pilih conversation, kirim pesan.
+
+## Auth (Login/Register)
+- Pages: `/login`, `/register`.
+- API: Supabase Auth (`/auth/v1/signup`, `/auth/v1/token?grant_type=password`) via `VITE_SUPABASE_URL` dan `VITE_SUPABASE_KEY`.
+- Token disimpan di localStorage, dipakai untuk request backend via Axios interceptor.
+- Protected routes: `/ai`, `/inbox` redirect ke login jika belum login.
