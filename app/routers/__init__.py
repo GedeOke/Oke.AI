@@ -17,6 +17,8 @@ def get_api_router() -> APIRouter:
     from app.routers.conversation_router import router as conversation_router
     from app.routers.message_router import router as message_router
     from app.rag.rag_router import router as rag_router
+    from app.routers.ai_test_router import router as ai_test_router
+    from app.channels.whatsapp.webhook_router import router as whatsapp_router
 
     router.include_router(auth_router)
     router.include_router(user_router)
@@ -25,6 +27,8 @@ def get_api_router() -> APIRouter:
     router.include_router(conversation_router)
     router.include_router(message_router)
     router.include_router(rag_router)
+    router.include_router(ai_test_router)
+    router.include_router(whatsapp_router)
     return router
 
 

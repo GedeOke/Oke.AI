@@ -65,5 +65,5 @@ async def search_chunks(
     current_user=Depends(get_current_user),
 ):
     org_id = _org_id(current_user)
-    chunks = retrieve(org_id, query, embed_provider=embed_provider, top_k=top_k)
+    chunks = retrieve(org_id, [query], embed_provider=embed_provider, top_k=top_k)
     return {"chunks": chunks}

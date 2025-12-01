@@ -123,3 +123,58 @@ create table if not exists public.ai_chunks (
 
 create index on public.ai_chunks using ivfflat (embedding vector_cosine_ops);
 ```
+
+# WhatsApp Webhook Channel
+
+## Endpoint
+- `GET /webhook/whatsapp/{organization_id}` untuk verification (hub.challenge). Env: `WHATSAPP_VERIFY_TOKEN`.
+- `POST /webhook/whatsapp/{organization_id}` untuk event/pesan.
+- Opsional: `POST /webhook/whatsapp/test/send` body `{ "organization_id": "...", "phone": "...", "text": "..." }`.
+
+## Signature
+- Header `X-Hub-Signature-256` divalidasi dengan HMAC SHA256 dan `WHATSAPP_APP_SECRET`.
+- Jika secret tidak diset, validasi dilewati (direkomendasikan untuk diisi).
+
+## Flow Inbound
+1) Verify signature → normalize payload (text/image/audio minimal).
+2) Dedup message_id via tabel `whatsapp_message_log`.
+3) Spam filter.
+4) Find/create customer (`source=whatsapp`) dan conversation (`channel=whatsapp`).
+5) Simpan pesan customer ke `messages`.
+6) Panggil `run_ai_pipeline` → simpan balasan AI ke `messages`.
+7) Kirim balasan ke WhatsApp Cloud API (env `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`).
+8) Logging structured.
+
+## Tabel Dedup
+```sql
+create table if not exists public.whatsapp_message_log (
+  message_id text,
+  organization_id uuid,
+  created_at timestamp with time zone default now()
+);
+create index if not exists idx_whatsapp_msg_log on public.whatsapp_message_log (organization_id, message_id);
+```
+
+## Contoh Payload WhatsApp (text)
+```json
+{
+  "entry": [{
+    "changes": [{
+      "value": {
+        "messages": [{
+          "id": "wamid.ABCD",
+          "from": "628123456789",
+          "timestamp": "1700000000",
+          "type": "text",
+          "text": {"body": "Halo"}
+        }]
+      }
+    }]
+  }]
+}
+```
+
+## Cara Tes (manual)
+- GET verification: `curl -G "http://localhost:8000/webhook/whatsapp/<org_id>" --data-urlencode "hub.mode=subscribe" --data-urlencode "hub.verify_token=<token>" --data-urlencode "hub.challenge=123"`.
+- POST event: kirim payload di atas ke endpoint POST dengan header signature sesuai `WHATSAPP_APP_SECRET`.
+- Test send: `POST /webhook/whatsapp/test/send` untuk kirim pesan WA outbound (butuh token/phone_number_id).
