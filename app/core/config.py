@@ -34,6 +34,11 @@ class Settings(BaseSettings):
     embed_model_provider: Optional[str] = Field(None, validation_alias="EMBED_MODEL_PROVIDER")
     llm_provider: Optional[str] = Field(None, validation_alias="LLM_PROVIDER")
 
+    whatsapp_verify_token: Optional[str] = Field(None, validation_alias="WHATSAPP_VERIFY_TOKEN")
+    whatsapp_app_secret: Optional[str] = Field(None, validation_alias="WHATSAPP_APP_SECRET")
+    whatsapp_token: Optional[str] = Field(None, validation_alias="WHATSAPP_TOKEN")
+    whatsapp_phone_number_id: Optional[str] = Field(None, validation_alias="WHATSAPP_PHONE_NUMBER_ID")
+
     @field_validator("allowed_origins", mode="before")
     @classmethod
     def split_origins(cls, value: Union[str, List[str]]) -> List[str]:
