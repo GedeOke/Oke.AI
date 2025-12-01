@@ -1,9 +1,10 @@
+import axios from "axios";
 import http from "./axios";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_KEY;
 
-const supabaseAuth = http.create({
+const supabaseAuth = axios.create({
   baseURL: supabaseUrl ? `${supabaseUrl}/auth/v1` : "/auth",
   headers: {
     apikey: supabaseKey || "",
