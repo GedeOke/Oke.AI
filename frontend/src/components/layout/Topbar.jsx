@@ -6,7 +6,7 @@ import { useAuth } from "../../context/AuthContext.jsx";
 
 export default function Topbar({ onToggleSidebar }) {
   const { organizationId, setOrganizationId } = useOrganization();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [value, setValue] = useState(organizationId || "");
 
   return (
@@ -37,9 +37,14 @@ export default function Topbar({ onToggleSidebar }) {
           Set Org
         </Button>
         {user && (
-          <div className="hidden md:block text-sm text-slate-600">
-            <div className="font-semibold text-slate-800">{user.email}</div>
-            <div className="text-xs text-slate-500">Signed in</div>
+          <div className="hidden md:flex items-center gap-2 text-sm text-slate-600">
+            <div className="text-right">
+              <div className="font-semibold text-slate-800">{user.email}</div>
+              <div className="text-xs text-slate-500">Signed in</div>
+            </div>
+            <Button variant="ghost" onClick={logout}>
+              Logout
+            </Button>
           </div>
         )}
       </div>

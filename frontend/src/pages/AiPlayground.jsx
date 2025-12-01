@@ -12,6 +12,9 @@ export default function AiPlayground() {
   const [message, setMessage] = useState("");
   const [provider, setProvider] = useState("openai");
   const [model, setModel] = useState("gpt-4o-mini");
+  const [showRag, setShowRag] = useState(true);
+  const [showPlanner, setShowPlanner] = useState(true);
+  const [showSafety, setShowSafety] = useState(true);
   const { run, loading, result, error } = useAi();
   const { organizationId } = useOrganization();
 
@@ -51,11 +54,25 @@ export default function AiPlayground() {
             {loading ? "Running..." : "Run AI"}
           </Button>
           {error && <p className="text-sm text-red-500">Error: {JSON.stringify(error)}</p>}
+          <div className="grid grid-cols-2 gap-2 text-sm text-slate-700">
+            <label className="inline-flex items-center gap-2">
+              <input type="checkbox" checked={showRag} onChange={(e) => setShowRag(e.target.checked)} />
+              Tampilkan RAG
+            </label>
+            <label className="inline-flex items-center gap-2">
+              <input type="checkbox" checked={showPlanner} onChange={(e) => setShowPlanner(e.target.checked)} />
+              Tampilkan Planner
+            </label>
+            <label className="inline-flex items-center gap-2">
+              <input type="checkbox" checked={showSafety} onChange={(e) => setShowSafety(e.target.checked)} />
+              Tampilkan Safety
+            </label>
+          </div>
         </Card>
         <AIPayloadViewer payload={payload} />
       </div>
 
-      <AIResultPanel result={result} />
+      <AIResultPanel result={result} showRag={showRag} showPlanner={showPlanner} showSafety={showSafety} />
     </div>
   );
 }

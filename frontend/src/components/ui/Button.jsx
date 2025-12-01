@@ -3,8 +3,8 @@ const base =
 
 const variants = {
   primary: "bg-gradient-to-r from-indigo-500 to-sky-500 text-white hover:brightness-105",
-  secondary: "bg-white/10 border border-white/20 text-white hover:bg-white/15",
-  ghost: "text-slate-100 hover:bg-white/10",
+  secondary: "bg-white border border-slate-200 text-slate-800 hover:bg-slate-50",
+  ghost: "text-slate-700 hover:bg-slate-100",
 };
 
 export default function Button({ children, variant = "primary", className = "", ...props }) {

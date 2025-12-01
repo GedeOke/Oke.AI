@@ -1,7 +1,7 @@
 import Card from "../ui/Card";
 import AIInsightBar from "./AIInsightBar.jsx";
 
-export default function AIResultPanel({ result }) {
+export default function AIResultPanel({ result, showRag = true, showPlanner = true, showSafety = true }) {
   if (!result) return <Card>Belum ada hasil.</Card>;
 
   const ragText =
@@ -19,25 +19,31 @@ export default function AIResultPanel({ result }) {
         <p className="text-slate-800 whitespace-pre-wrap leading-relaxed">{result.reply || "-"}</p>
       </Card>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Card>
-          <h3 className="text-sm font-semibold mb-2 text-slate-800">RAG Chunks</h3>
-          <pre className="text-xs bg-slate-50 border border-slate-200 p-3 rounded-xl overflow-auto max-h-64 whitespace-pre-wrap text-slate-700">
-{ragText}
-          </pre>
-        </Card>
-        <Card className="space-y-3">
-          <div>
-            <h3 className="text-sm font-semibold mb-1 text-slate-800">Function Planner</h3>
+        {showRag && (
+          <Card>
+            <h3 className="text-sm font-semibold mb-2 text-slate-800">RAG Chunks</h3>
             <pre className="text-xs bg-slate-50 border border-slate-200 p-3 rounded-xl overflow-auto max-h-64 whitespace-pre-wrap text-slate-700">
+{ragText}
+            </pre>
+          </Card>
+        )}
+        <Card className="space-y-3">
+          {showPlanner && (
+            <div>
+              <h3 className="text-sm font-semibold mb-1 text-slate-800">Function Planner</h3>
+              <pre className="text-xs bg-slate-50 border border-slate-200 p-3 rounded-xl overflow-auto max-h-64 whitespace-pre-wrap text-slate-700">
 {JSON.stringify(result.action || {}, null, 2)}
-            </pre>
-          </div>
-          <div>
-            <h3 className="text-sm font-semibold mb-1 text-slate-800">Safety</h3>
-            <pre className="text-xs bg-slate-50 border border-slate-200 p-3 rounded-xl overflow-auto whitespace-pre-wrap text-slate-700">
+              </pre>
+            </div>
+          )}
+          {showSafety && (
+            <div>
+              <h3 className="text-sm font-semibold mb-1 text-slate-800">Safety</h3>
+              <pre className="text-xs bg-slate-50 border border-slate-200 p-3 rounded-xl overflow-auto whitespace-pre-wrap text-slate-700">
 {JSON.stringify(result.safety || {}, null, 2)}
-            </pre>
-          </div>
+              </pre>
+            </div>
+          )}
         </Card>
       </div>
     </div>
