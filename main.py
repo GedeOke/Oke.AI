@@ -13,6 +13,7 @@ from app.middlewares.error_handler import init_error_handlers
 from app.routers import register_routers
 from app.utils.logger import get_logger, setup_logging
 from app.utils.rate_limiter import RateLimiter
+from app.channels.whatsapp.webhook_router import router as whatsapp_webhook_router
 
 settings = get_settings()
 setup_logging(settings.log_level)
@@ -41,6 +42,7 @@ def create_app() -> FastAPI:
     init_error_handlers(application)
     register_middlewares(application)
     register_routers(application)
+    application.include_router(whatsapp_webhook_router, tags=["whatsapp"])
     register_health_endpoint(application)
 
     return application

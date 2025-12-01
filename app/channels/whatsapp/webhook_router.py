@@ -11,23 +11,27 @@ from app.channels.whatsapp.message_handler import handle
 from app.channels.whatsapp.signature_validator import validate_signature
 from app.utils.logger import get_logger
 
-router = APIRouter(prefix="/webhook/whatsapp", tags=["webhook-whatsapp"])
+router = APIRouter(tags=["webhook-whatsapp"])
 logger = get_logger(__name__)
 
 
-@router.get("/{organization_id}")
-async def verify_webhook(organization_id: str, hub_mode: str = "", hub_challenge: str = "", hub_verify_token: str = ""):
+@router.get("/webhook/whatsapp")
+async def verify_webhook(
+    hub_mode: str = "",
+    hub_challenge: str = "",
+    hub_verify_token: str = "",
+):
     verify_token = os.getenv("WHATSAPP_VERIFY_TOKEN", "")
     if hub_mode == "subscribe" and hub_verify_token == verify_token:
         return int(hub_challenge or 0)
     raise HTTPException(status_code=403, detail="Verification failed")
 
 
-@router.post("/{organization_id}")
+@router.post("/webhook/whatsapp")
 async def receive_webhook(
-    organization_id: str,
     request: Request,
 ):
+    print("WEBHOOK WA RECEIVED")
     raw_body = await request.body()
     signature = request.headers.get("X-Hub-Signature-256")
     try:
@@ -38,17 +42,19 @@ async def receive_webhook(
     except Exception:
         raise HTTPException(status_code=400, detail="Invalid payload")
 
-    logger.info("WA message received", extra={"org": organization_id})
+    logger.info("WA message received")
     try:
-        result = await handle(payload, organization_id)
+        # organization_id can be derived from payload or configured per webhook URL.
+        org_id = request.query_params.get("organization_id") or os.getenv("DEFAULT_ORG_ID", "")
+        result = await handle(payload, org_id)
     except Exception as exc:
-        logger.exception("Failed to handle WA webhook", extra={"org": organization_id})
+        logger.exception("Failed to handle WA webhook")
         # Do not fail webhook to avoid retries storm; return 200
         return {"status": "error", "detail": str(exc)}
     return result
 
 
-@router.post("/test/send")
+@router.post("/webhook/whatsapp/test/send")
 async def test_send(payload: Dict):
     from app.channels.whatsapp.reply_sender import send_message
 
