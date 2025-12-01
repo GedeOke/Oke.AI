@@ -123,3 +123,14 @@ create table if not exists public.ai_chunks (
 
 create index on public.ai_chunks using ivfflat (embedding vector_cosine_ops);
 ```
+
+# Integrasi RAG ke AI Engine
+- Query optimizer menghasilkan beberapa varian query.
+- Retriever meng-embed query, vector search via pgvector, lalu memberi chunk terformat ke prompt builder (INFO).
+- Pipeline AI tetap jalan meski RAG kosong/error (fallback “Tidak ada informasi relevan.”).
+- Endpoint test: `POST /ai/test/rag` dengan `organization_id` dan `query` untuk melihat queries/chunks yang dipakai.
+
+# Cara Tes Cepat
+- Jalankan `pytest tests/test_rag_chunker.py` untuk chunker.
+- Panggil `POST /ai/test/rag` (pastikan tabel dan embeddings ada) untuk cek retrieval.
+- Jalankan `run_ai_pipeline` seperti contoh sebelumnya; pastikan provider API key terisi.
