@@ -4,6 +4,7 @@ import Card from "../components/ui/Card.jsx";
 import Input from "../components/ui/Input.jsx";
 import Button from "../components/ui/Button.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
+import { getErrorMessage } from "../lib/error.js";
 
 export default function Register() {
   const { register } = useAuth();
@@ -22,7 +23,7 @@ export default function Register() {
       await register(email, password, fullName);
       navigate("/inbox");
     } catch (err) {
-      setError(err.response?.data || err.message);
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -60,7 +61,7 @@ export default function Register() {
             <h1 className="text-2xl font-semibold text-white">Register</h1>
             <p className="text-sm text-slate-300">Buat akun baru OkeAI.</p>
           </div>
-          {error && <p className="text-sm text-red-300">Error: {JSON.stringify(error)}</p>}
+          {error && <p className="text-sm text-red-300">Error: {error}</p>}
           <form className="space-y-4" onSubmit={handleSubmit}>
             <div>
               <label className="text-sm font-medium text-slate-200">Nama Lengkap</label>

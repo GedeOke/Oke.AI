@@ -4,6 +4,7 @@ import Card from "../components/ui/Card.jsx";
 import Input from "../components/ui/Input.jsx";
 import Button from "../components/ui/Button.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
+import { getErrorMessage } from "../lib/error.js";
 
 export default function Login() {
   const { login } = useAuth();
@@ -21,7 +22,7 @@ export default function Login() {
       await login(email, password);
       navigate("/inbox");
     } catch (err) {
-      setError(err.response?.data || err.message);
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -57,7 +58,7 @@ export default function Login() {
             <h1 className="text-2xl font-semibold text-white">Login</h1>
             <p className="text-sm text-slate-300">Masuk ke dashboard OkeAI untuk mulai bekerja.</p>
           </div>
-          {error && <p className="text-sm text-red-300 mb-4">Error: {JSON.stringify(error)}</p>}
+          {error && <p className="text-sm text-red-300 mb-4">Error: {error}</p>}
           <form className="space-y-4" onSubmit={handleSubmit}>
             <div className="space-y-1">
               <label className="text-sm font-medium text-slate-200">Email</label>
