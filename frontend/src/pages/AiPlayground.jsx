@@ -25,35 +25,37 @@ export default function AiPlayground() {
   return (
     <div className="space-y-4">
       <div>
-        <p className="text-xs font-semibold text-indigo-600 uppercase tracking-wide">AI Engine</p>
-        <h1 className="text-2xl font-semibold text-slate-900">AI Playground</h1>
-        <p className="text-sm text-slate-500">Uji prompt, provider, dan lihat hasil lengkap AI.</p>
+        <p className="text-xs font-semibold text-indigo-300 uppercase tracking-[0.25em]">AI Engine</p>
+        <h1 className="text-3xl font-semibold text-white">AI Playground</h1>
+        <p className="text-sm text-slate-200/80">Uji prompt, pilih provider, lihat hasil lengkap (RAG, planner, safety).</p>
       </div>
-      <Card className="space-y-4">
-        <AIModelSelector
-          provider={provider}
-          model={model}
-          onProviderChange={setProvider}
-          onModelChange={setModel}
-        />
-        <div>
-          <label className="text-sm font-medium text-gray-700">Prompt</label>
-          <Textarea
-            rows={5}
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            placeholder="Tuliskan pesan untuk AI..."
-            className="mt-2"
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Card className="space-y-4">
+          <AIModelSelector
+            provider={provider}
+            model={model}
+            onProviderChange={setProvider}
+            onModelChange={setModel}
           />
-        </div>
-        <Button onClick={() => run({ message, model_provider: provider, model })} disabled={loading}>
-          {loading ? "Running..." : "Run AI"}
-        </Button>
-        {error && <p className="text-sm text-red-600">Error: {JSON.stringify(error)}</p>}
-      </Card>
+          <div>
+            <label className="text-sm font-medium text-slate-200">Prompt</label>
+            <Textarea
+              rows={5}
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="Tuliskan pesan untuk AI..."
+              className="mt-2 bg-white/5 border-white/10 text-slate-50"
+            />
+          </div>
+          <Button onClick={() => run({ message, model_provider: provider, model })} disabled={loading}>
+            {loading ? "Running..." : "Run AI"}
+          </Button>
+          {error && <p className="text-sm text-red-300">Error: {JSON.stringify(error)}</p>}
+        </Card>
+        <AIPayloadViewer payload={payload} />
+      </div>
 
       <AIResultPanel result={result} />
-      <AIPayloadViewer payload={payload} />
     </div>
   );
 }

@@ -8,14 +8,14 @@ export default function Topbar() {
   const [value, setValue] = useState(organizationId || "");
 
   return (
-    <header className="w-full bg-white/80 backdrop-blur border-b border-slate-200 px-4 py-3 flex items-center justify-between">
+    <header className="w-full bg-white/5 backdrop-blur border-b border-white/10 px-4 py-3 flex items-center justify-between">
       <div className="flex items-center gap-2">
-        <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold">
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-sky-500 text-white flex items-center justify-center font-bold shadow-lg shadow-indigo-500/30">
           OA
         </div>
         <div>
-          <h1 className="text-base font-semibold text-slate-900">OkeAI Dashboard</h1>
-          <p className="text-xs text-slate-500">CRM & AI Engine Playground</p>
+          <h1 className="text-base font-semibold text-slate-50">OkeAI Dashboard</h1>
+          <p className="text-xs text-slate-300">CRM & AI Engine Playground</p>
         </div>
       </div>
       <div className="flex items-center gap-2">
