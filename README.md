@@ -71,3 +71,55 @@ print(result["reply"])
 ## Tuning AI
 - Atur tabel `ai_settings` per organisasi untuk persona, rules, style, examples, call_word, rag, llm_params, tools schema.
 - Set env keys untuk provider: `OPENAI_API_KEY`, `GROQ_API_KEY`, `GEMINI_API_KEY` (+ optional model overrides).
+
+---
+
+# RAG Module
+
+## Alur Upload → Chunk → Embed
+1) Upload file via `POST /rag/upload` (pdf/docx/txt) atau teks via `POST /rag/text`.
+2) Ekstrak teks → chunking (`chunk_size` default 500, overlap 50).
+3) Embedding (OpenAI/Gemini/local ST) → simpan ke `ai_chunks` dengan metadata.
+4) Dokumen tercatat di `ai_documents`.
+
+## Vector Search
+- `GET /rag/search?query=...` → embed query, panggil RPC `match_ai_chunks` (pgvector) → kembalikan chunks terbaik.
+- Index: `create index on ai_chunks using ivfflat (embedding vector_cosine_ops);`
+
+## Integrasi AI Engine
+- Orchestrator memanggil `rag.retrieve(org_id, user_message, embed_provider=...)` sebelum build prompt.
+- `rag_chunks` dikirim ke prompt builder sebagai konteks.
+
+## Format Dokumen Didukung
+- `.pdf` (butuh PyPDF2)
+- `.docx` (butuh python-docx)
+- `.txt` (plain text)
+
+## Endpoint Ringkas
+- `POST /rag/upload` (UploadFile)
+- `POST /rag/text` (JSON text/title/source)
+- `GET /rag/documents`
+- `GET /rag/search?query=...`
+
+## Prosedur SQL (Supabase)
+```sql
+create table if not exists public.ai_documents (
+  id uuid primary key,
+  organization_id uuid references public.organizations(id),
+  title text,
+  source text,
+  created_at timestamp with time zone default now()
+);
+
+create table if not exists public.ai_chunks (
+  id uuid primary key,
+  organization_id uuid,
+  document_id uuid references public.ai_documents(id),
+  content text,
+  embedding vector(1536),
+  metadata jsonb,
+  created_at timestamp with time zone default now()
+);
+
+create index on public.ai_chunks using ivfflat (embedding vector_cosine_ops);
+```

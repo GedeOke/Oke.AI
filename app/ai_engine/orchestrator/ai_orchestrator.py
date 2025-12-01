@@ -9,11 +9,9 @@ from app.ai_engine.agent_assist.suggestion_generator import generate_suggestions
 from app.ai_engine.autopilot.autopilot_decider import should_auto_reply
 from app.ai_engine.classifiers.intent_classifier import classify_intent
 from app.ai_engine.classifiers.sentiment_analyzer import analyze_sentiment
-from app.ai_engine.memory.memory_manager import compress_and_store
 from app.ai_engine.planner.function_planner import plan_action
 from app.ai_engine.providers.provider_selector import chat_completion
-from app.ai_engine.rag.query_optimizer import optimize_query
-from app.ai_engine.rag.rag_retriever import retrieve_chunks
+from app.rag.retriever import retrieve
 from app.ai_engine.safety.safety_checker import check_safety
 from app.ai_engine.spam_filter.spam_pipeline import is_spam
 from app.ai_engine.tuning.ai_settings_loader import load_ai_settings
@@ -39,10 +37,9 @@ async def run_ai_pipeline(
         intent = await classify_intent(provider, user_message)
         sentiment = await analyze_sentiment(provider, user_message)
 
-        optimized_queries = optimize_query(user_message)
-        rag_chunks = retrieve_chunks(org_id, optimized_queries[0], top_k=3)
-
         settings = load_ai_settings(org_id)
+        embed_provider = settings.get("embed_provider", provider)
+        rag_chunks = retrieve(org_id, user_message, embed_provider=embed_provider, top_k=6)
         messages = build_prompt(
             identity="OkeAI Agent",
             persona=settings.get("persona") or "Helpful assistant",
