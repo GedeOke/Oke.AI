@@ -19,6 +19,8 @@ logger = get_logger(__name__)
 
 async def _is_duplicate(org_id: str, message_id: str) -> bool:
     client = get_supabase_client()
+    if not message_id:
+        return False
     resp = (
         client.table("whatsapp_message_log")
         .select("message_id")
@@ -39,6 +41,8 @@ def _log_message(org_id: str, message_id: str) -> None:
 
 
 async def handle(payload: Dict, organization_id: str) -> Dict:
+    if not organization_id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Missing required ID: organization_id")
     normalized = normalize(payload, organization_id)
     if not normalized:
         return {"status": "ignored"}
@@ -52,30 +56,49 @@ async def handle(payload: Dict, organization_id: str) -> Dict:
         return {"status": "spam"}
 
     client = get_supabase_client()
+    external_id = normalized.get("external_id")
+    if not external_id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Missing required ID: external_id")
+
     customer = customer_service.find_or_create_customer(
-        organization_id, normalized["external_id"], source="whatsapp", client=client
+        organization_id, external_id, source="whatsapp", client=client
     )
+    customer_id = customer.id if hasattr(customer, "id") else customer.get("id")
+    if not customer_id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Missing required ID: customer_id")
+
     conversation = conversation_service.find_or_create_conversation(
-        organization_id, customer.id if hasattr(customer, "id") else customer["id"], "whatsapp", client=client
+        organization_id, customer_id, "whatsapp", client=client
     )
+    conversation_id = conversation.id if hasattr(conversation, "id") else conversation.get("id")
+    if not conversation_id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Missing required ID: conversation_id")
 
     # Save incoming message
     msg_record = {
         "id": str(uuid4()),
         "organization_id": organization_id,
-        "conversation_id": conversation.id if hasattr(conversation, "id") else conversation["id"],
+        "conversation_id": conversation_id,
         "sender_type": "customer",
         "sender_id": None,
         "content": normalized["content"],
         "metadata": normalized,
     }
+    logger.info(
+        "message insert debug",
+        extra={
+            "organization_id": organization_id,
+            "customer_id": customer_id,
+            "conversation_id": conversation_id,
+        },
+    )
     client.table("messages").insert(msg_record).execute()
 
     # Build conversation history context (last 10)
     history_resp = (
         client.table("messages")
         .select("sender_type,content")
-        .eq("conversation_id", msg_record["conversation_id"])
+        .eq("conversation_id", conversation_id)
         .order("created_at", desc=True)
         .limit(10)
         .execute()
@@ -99,7 +122,7 @@ async def handle(payload: Dict, organization_id: str) -> Dict:
         ai_msg_record = {
             "id": str(uuid4()),
             "organization_id": organization_id,
-            "conversation_id": msg_record["conversation_id"],
+            "conversation_id": conversation_id,
             "sender_type": "ai",
             "sender_id": None,
             "content": ai_text,

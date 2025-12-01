@@ -15,8 +15,9 @@ router = APIRouter(tags=["webhook-whatsapp"])
 logger = get_logger(__name__)
 
 
-@router.get("/webhook/whatsapp")
+@router.get("/webhook/whatsapp/{organization_id}")
 async def verify_webhook(
+    organization_id: str,
     hub_mode: str = "",
     hub_challenge: str = "",
     hub_verify_token: str = "",
@@ -27,11 +28,14 @@ async def verify_webhook(
     raise HTTPException(status_code=403, detail="Verification failed")
 
 
-@router.post("/webhook/whatsapp")
+@router.post("/webhook/whatsapp/{organization_id}")
 async def receive_webhook(
+    organization_id: str,
     request: Request,
 ):
     print("WEBHOOK WA RECEIVED")
+    if not organization_id:
+        raise HTTPException(status_code=400, detail="organization_id is required")
     raw_body = await request.body()
     signature = request.headers.get("X-Hub-Signature-256")
     try:
@@ -42,13 +46,11 @@ async def receive_webhook(
     except Exception:
         raise HTTPException(status_code=400, detail="Invalid payload")
 
-    logger.info("WA message received")
+    logger.info("WA message received", extra={"organization_id": organization_id})
     try:
-        # organization_id can be derived from payload or configured per webhook URL.
-        org_id = request.query_params.get("organization_id") or os.getenv("DEFAULT_ORG_ID", "")
-        result = await handle(payload, org_id)
+        result = await handle(payload, organization_id)
     except Exception as exc:
-        logger.exception("Failed to handle WA webhook")
+        logger.exception("Failed to handle WA webhook", extra={"organization_id": organization_id})
         # Do not fail webhook to avoid retries storm; return 200
         return {"status": "error", "detail": str(exc)}
     return result
