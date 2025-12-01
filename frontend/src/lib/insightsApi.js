@@ -1,16 +1,28 @@
 import http from "./axios";
 
 export const fetchLogs = async (params = {}) => {
-  const { data } = await http.get("/ai/logs", { params });
-  return data;
+  try {
+    const { data } = await http.get("/ai/logs", { params });
+    return data;
+  } catch {
+    return [];
+  }
 };
 
 export const fetchLogDetail = async (id) => {
-  const { data } = await http.get(`/ai/logs/${id}`);
-  return data;
+  try {
+    const { data } = await http.get(`/ai/logs/${id}`);
+    return data;
+  } catch {
+    return null;
+  }
 };
 
 export const fetchMetrics = async () => {
-  const { data } = await http.get("/ai/metrics");
-  return data;
+  try {
+    const { data } = await http.get("/ai/metrics");
+    return data;
+  } catch {
+    return {};
+  }
 };

@@ -6,6 +6,13 @@ import Register from "./pages/Register.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import { useAuth } from "./context/AuthContext.jsx";
 import MainLayout from "./components/layout/MainLayout.jsx";
+import Settings from "./pages/ai/Settings.jsx";
+import KnowledgeBase from "./pages/ai/KnowledgeBase.jsx";
+import Autopilot from "./pages/ai/Autopilot.jsx";
+import SafetyRules from "./pages/ai/SafetyRules.jsx";
+import Tools from "./pages/ai/Tools.jsx";
+import Insights from "./pages/ai/Insights.jsx";
+import { AiSettingsProvider } from "./context/AiSettingsContext.jsx";
 
 function App() {
   const { token } = useAuth();
@@ -18,9 +25,11 @@ function App() {
         path="/ai"
         element={
           <ProtectedRoute>
-            <MainLayout>
-              <AiPlayground />
-            </MainLayout>
+            <AiSettingsProvider>
+              <MainLayout>
+                <AiPlayground />
+              </MainLayout>
+            </AiSettingsProvider>
           </ProtectedRoute>
         }
       />
@@ -30,6 +39,68 @@ function App() {
           <ProtectedRoute>
             <MainLayout>
               <Inbox />
+            </MainLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/ai/settings"
+        element={
+          <ProtectedRoute>
+            <AiSettingsProvider>
+              <MainLayout>
+                <Settings />
+              </MainLayout>
+            </AiSettingsProvider>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/ai/knowledge"
+        element={
+          <ProtectedRoute>
+            <MainLayout>
+              <KnowledgeBase />
+            </MainLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/ai/autopilot"
+        element={
+          <ProtectedRoute>
+            <MainLayout>
+              <Autopilot />
+            </MainLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/ai/safety"
+        element={
+          <ProtectedRoute>
+            <MainLayout>
+              <SafetyRules />
+            </MainLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/ai/tools"
+        element={
+          <ProtectedRoute>
+            <MainLayout>
+              <Tools />
+            </MainLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/ai/insights"
+        element={
+          <ProtectedRoute>
+            <MainLayout>
+              <Insights />
             </MainLayout>
           </ProtectedRoute>
         }

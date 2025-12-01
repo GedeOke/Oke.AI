@@ -3,6 +3,12 @@ import { Link, useLocation } from "react-router-dom";
 const navItems = [
   { to: "/ai", label: "AI Playground" },
   { to: "/inbox", label: "Inbox" },
+  { to: "/ai/settings", label: "AI Settings" },
+  { to: "/ai/knowledge", label: "Knowledge Base" },
+  { to: "/ai/autopilot", label: "Autopilot" },
+  { to: "/ai/safety", label: "Safety & Rules" },
+  { to: "/ai/tools", label: "AI Tools" },
+  { to: "/ai/insights", label: "AI Insights" },
 ];
 
 export default function Sidebar({ onSelect }) {

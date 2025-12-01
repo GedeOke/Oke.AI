@@ -2,15 +2,11 @@ import { useEffect, useState } from "react";
 import Card from "../../components/ui/Card.jsx";
 import DocumentUploader from "../../components/ai/rag/DocumentUploader.jsx";
 import DocumentList from "../../components/ai/rag/DocumentList.jsx";
-import ChunkPreviewModal from "../../components/ai/rag/ChunkPreviewModal.jsx";
 import RagTestConsole from "../../components/ai/rag/RagTestConsole.jsx";
-import { uploadDocument, listDocuments, listChunks, testRag } from "../../lib/ragApi";
+import { uploadDocument, listDocuments, searchRag } from "../../lib/ragApi";
 
 export default function KnowledgeBase() {
   const [docs, setDocs] = useState([]);
-  const [selectedDoc, setSelectedDoc] = useState(null);
-  const [chunks, setChunks] = useState([]);
-  const [openPreview, setOpenPreview] = useState(false);
   const [ragResult, setRagResult] = useState(null);
 
   const refresh = async () => {
@@ -18,16 +14,9 @@ export default function KnowledgeBase() {
     setDocs(data || []);
   };
 
-  const handlePreview = async (doc) => {
-    setSelectedDoc(doc);
-    const data = await listChunks(doc.id);
-    setChunks(data || []);
-    setOpenPreview(true);
-  };
-
   const handleTest = async (query) => {
-    const data = await testRag({ query });
-    setRagResult(data || {});
+    const data = await searchRag(query, 6);
+    setRagResult({ chunks: data?.chunks || data?.rag_chunks || [], answer: data?.answer || "" });
   };
 
   useEffect(() => {
@@ -52,10 +41,8 @@ export default function KnowledgeBase() {
       </div>
 
       <Card>
-        <DocumentList documents={docs} onSelect={handlePreview} />
+        <DocumentList documents={docs} onSelect={() => {}} />
       </Card>
-
-      <ChunkPreviewModal open={openPreview} onClose={() => setOpenPreview(false)} chunks={chunks} />
     </div>
   );
 }

@@ -17,12 +17,7 @@ export const listDocuments = async () => {
   return data;
 };
 
-export const listChunks = async (docId) => {
-  const { data } = await http.get(`/rag/chunks/${docId}`);
-  return data;
-};
-
-export const testRag = async (payload) => {
-  const { data } = await http.post("/rag/test", payload);
+export const searchRag = async (query, top_k = 6) => {
+  const { data } = await http.get("/rag/search", { params: { query, top_k } });
   return data;
 };
